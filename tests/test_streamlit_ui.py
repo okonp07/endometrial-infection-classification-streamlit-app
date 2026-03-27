@@ -13,6 +13,7 @@ from endometrial_app.streamlit_ui import (
     _download_link_html,
     _hero_copy_html,
     _initial_inference_state,
+    _metadata_panel_html,
     _probability_distribution_html,
     _visual_placeholder_panel_html,
 )
@@ -80,3 +81,11 @@ def test_streamlit_visual_placeholders_include_requested_watermarks() -> None:
     assert "Inference image" in input_placeholder
     assert "Attention heatmap" in heatmap_placeholder
     assert "visual-watermark" in input_placeholder
+
+
+def test_streamlit_metadata_placeholder_is_human_readable() -> None:
+    metadata_html = _metadata_panel_html(_initial_inference_state()["metadata"])
+
+    assert "Inference metadata will appear here" in metadata_html
+    assert "Upload a scan and run the classifier" in metadata_html
+    assert '"status"' not in metadata_html

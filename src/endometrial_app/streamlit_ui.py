@@ -200,10 +200,13 @@ code {
 }
 
 .hero-copy h1 {
-    color: var(--brand-white);
+    color: var(--brand-white) !important;
+    -webkit-text-fill-color: var(--brand-white);
     font-size: 3rem;
     line-height: 1.02;
     margin: 0.15rem 0 1rem;
+    font-weight: 800;
+    text-shadow: 0 10px 22px rgba(9, 45, 70, 0.18);
 }
 
 .hero-copy p {
@@ -639,6 +642,23 @@ div.stDownloadButton > button:hover {
     line-height: 1.65;
 }
 
+.metadata-empty {
+    display: flex;
+    min-height: 170px;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--brand-slate);
+    padding: 1.1rem 1rem;
+}
+
+.metadata-empty strong {
+    display: block;
+    margin-bottom: 0.3rem;
+    color: var(--brand-blue-deep);
+    font-size: 1rem;
+}
+
 .author-photo-shell {
     width: min(220px, 100%);
     aspect-ratio: 1 / 1;
@@ -832,6 +852,28 @@ def _download_link_html(bundle_bytes: bytes, filename: str) -> str:
     )
 
 
+def _hero_stats_html(summary: dict[str, Any]) -> str:
+    clean_counts = summary.get("clean_counts", {})
+    split_counts = summary.get("split_counts", {})
+    total_clean = sum(int(count) for count in clean_counts.values())
+    test_total = sum(int(count) for count in split_counts.get("test", {}).values())
+    cards = [
+        ("2", "Target classes"),
+        (f"{total_clean:,}" if total_clean else "N/A", "Deduplicated scans"),
+        (f"{test_total:,}" if test_total else "N/A", "Held-out test images"),
+    ]
+    stats_markup = "".join(
+        (
+            '<div class="hero-stat">'
+            f'<span class="hero-stat-value">{html.escape(value)}</span>'
+            f'<span class="hero-stat-label">{html.escape(label)}</span>'
+            "</div>"
+        )
+        for value, label in cards
+    )
+    return f'<div class="hero-stat-grid">{stats_markup}</div>'
+
+
 def _hero_copy_html(summary: dict[str, Any]) -> str:
     return f"""
     <div class="hero-copy">
@@ -843,7 +885,7 @@ def _hero_copy_html(summary: dict[str, Any]) -> str:
             It combines a modern web interface, a reusable FastAPI backend, and a curated medical-image
             workflow so the model can move beyond the notebook into a real deployment setting.
         </p>
-        {gradio_ui._hero_stats_html(summary)}
+        {_hero_stats_html(summary)}
     </div>
     """
 
@@ -986,6 +1028,29 @@ def _build_probability_metadata(
         "focus_coverage": round(float(explanation.get("focus_coverage", 0.0)), 4),
         "high_attention_threshold": round(float(explanation.get("high_attention_threshold", 0.0)), 4),
     }
+
+
+def _metadata_panel_html(metadata: dict[str, Any]) -> str:
+    if metadata.get("status") == "Awaiting inference":
+        return f"""
+        <div class="metadata-shell">
+            {_visual_label_html("Inference metadata")}
+            <div class="metadata-empty">
+                <div>
+                    <strong>Inference metadata will appear here</strong>
+                    Upload a scan and run the classifier to populate the request details, input size, class order, and explanation metadata for the current prediction.
+                </div>
+            </div>
+        </div>
+        """
+
+    metadata_json = html.escape(json.dumps(metadata, indent=2))
+    return f"""
+    <div class="metadata-shell">
+        {_visual_label_html("Inference metadata")}
+        <pre>{metadata_json}</pre>
+    </div>
+    """
 
 
 def _classify_current_image(service: PredictionService) -> None:
@@ -1159,16 +1224,7 @@ def _render_classify_tab(service: PredictionService, project_root: Path) -> None
                     _visual_image_panel_html(state["attention_heatmap_image"], "Model attention heatmap"),
                     unsafe_allow_html=True,
                 )
-        metadata_json = html.escape(json.dumps(state["metadata"], indent=2))
-        st.markdown(
-            f"""
-            <div class="metadata-shell">
-                {_visual_label_html("Inference metadata")}
-                <pre>{metadata_json}</pre>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown(_metadata_panel_html(state["metadata"]), unsafe_allow_html=True)
 
     st.markdown(
         """
