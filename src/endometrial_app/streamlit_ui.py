@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import html
+import json
 import mimetypes
 from io import BytesIO
 from pathlib import Path
@@ -53,11 +54,12 @@ footer {
 }
 
 [data-testid="stVerticalBlockBorderWrapper"] {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.92);
     border: 1px solid rgba(9, 45, 70, 0.08);
     border-radius: 28px;
     box-shadow: 0 20px 56px rgba(18, 36, 45, 0.08);
     padding: 1.2rem 1.2rem 1.1rem;
+    backdrop-filter: blur(16px);
 }
 
 [data-testid="stTabs"] [data-baseweb="tab-list"] {
@@ -87,6 +89,10 @@ footer {
     padding-top: 1.2rem;
 }
 
+[data-testid="stHorizontalBlock"] {
+    align-items: stretch;
+}
+
 h1, h2, h3 {
     color: var(--brand-blue-deep);
     font-family: "Space Grotesk", "Manrope", "Avenir Next", "Segoe UI", sans-serif;
@@ -106,6 +112,60 @@ code {
     background: rgba(14, 77, 115, 0.08);
     border-radius: 0.45rem;
     padding: 0.08rem 0.32rem;
+}
+
+.section-intro {
+    margin-bottom: 1rem;
+    padding: 1.2rem 1.3rem;
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 250, 251, 0.92) 100%);
+    border: 1px solid rgba(9, 45, 70, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.section-intro h2 {
+    margin: 0.2rem 0 0.55rem;
+    font-size: 1.9rem;
+    line-height: 1.08;
+}
+
+.section-intro p {
+    margin: 0;
+    color: var(--brand-slate);
+    line-height: 1.72;
+    max-width: 72ch;
+}
+
+.section-intro.compact {
+    padding: 1rem 1.1rem;
+}
+
+.status-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    margin: 0.1rem 0 1.1rem;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.52rem 0.88rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(9, 45, 70, 0.08);
+    color: var(--brand-blue-deep);
+    font-size: 0.92rem;
+    font-weight: 700;
+    box-shadow: 0 10px 24px rgba(18, 36, 45, 0.06);
+}
+
+.status-pill .dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand-blue), var(--brand-green));
 }
 
 .hero-copy {
@@ -207,6 +267,16 @@ code {
     margin-bottom: 1.35rem;
 }
 
+.content-card-head h3,
+.content-card-head h2 {
+    margin: 0.2rem 0 0.45rem;
+}
+
+.content-card-head p {
+    margin: 0;
+    color: var(--brand-slate);
+}
+
 .section-kicker,
 .prediction-kicker {
     display: inline-block;
@@ -239,6 +309,7 @@ code {
     border-radius: 22px;
     background: linear-gradient(180deg, #f7fafb 0%, #edf5f3 100%);
     border: 1px solid rgba(9, 45, 70, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
 }
 
 .prediction-shell.placeholder {
@@ -381,7 +452,7 @@ code {
     padding: 0.42rem 0.76rem;
     border-radius: 14px;
     background: rgba(14, 77, 115, 0.08);
-    color: #397cf5;
+    color: var(--brand-blue);
     font-weight: 800;
     font-size: 0.98rem;
 }
@@ -427,6 +498,20 @@ div.stDownloadButton > button {
     border-radius: 16px;
     font-weight: 700;
     min-height: 3rem;
+    border: 1px solid rgba(9, 45, 70, 0.08);
+    box-shadow: 0 12px 26px rgba(18, 36, 45, 0.08);
+}
+
+div.stButton > button[kind="primary"],
+div.stDownloadButton > button[kind="primary"] {
+    background: linear-gradient(135deg, var(--brand-blue-deep), var(--brand-green));
+    color: var(--brand-white);
+    border: none;
+}
+
+div.stButton > button:hover,
+div.stDownloadButton > button:hover {
+    transform: translateY(-1px);
 }
 
 .download-highlight,
@@ -457,6 +542,24 @@ div.stDownloadButton > button {
     margin: 0 0 0.55rem;
     color: var(--brand-blue-deep);
     font-family: "Space Grotesk", "Manrope", sans-serif;
+}
+
+.metadata-shell {
+    margin-top: 0.45rem;
+    padding: 1rem 1.05rem;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(247, 250, 251, 0.98) 0%, rgba(237, 245, 243, 0.92) 100%);
+    border: 1px solid rgba(9, 45, 70, 0.08);
+}
+
+.metadata-shell pre {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: var(--brand-ink);
+    font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+    font-size: 0.88rem;
+    line-height: 1.65;
 }
 
 .author-photo-shell {
@@ -495,6 +598,10 @@ div.stDownloadButton > button {
 }
 
 @media (max-width: 960px) {
+    .section-intro h2 {
+        font-size: 1.6rem;
+    }
+
     .hero-copy h1 {
         font-size: 2.15rem;
         line-height: 1.06;
@@ -515,6 +622,10 @@ div.stDownloadButton > button {
     .hero-stat-grid,
     .placeholder-guide {
         grid-template-columns: 1fr;
+    }
+
+    .status-strip {
+        gap: 0.55rem;
     }
 
     .preview-shell {
@@ -540,6 +651,11 @@ div.stDownloadButton > button {
 
     .author-photo-shell {
         width: min(180px, 100%);
+    }
+
+    .section-intro,
+    .section-intro.compact {
+        padding: 0.95rem 1rem;
     }
 }
 """
@@ -651,6 +767,25 @@ def _hero_banner_html(banner_path: Path) -> str:
         <img src="{_data_uri_from_path(banner_path)}" alt="Endometrial classifier banner" />
     </div>
     """
+
+
+def _section_intro_html(kicker: str, title: str, body: str, *, compact: bool = False) -> str:
+    compact_class = " compact" if compact else ""
+    return f"""
+    <div class="section-intro{compact_class}">
+        <span class="section-kicker">{html.escape(kicker)}</span>
+        <h2>{html.escape(title)}</h2>
+        <p>{body}</p>
+    </div>
+    """
+
+
+def _status_strip_html(*items: str) -> str:
+    pills = "".join(
+        f'<div class="status-pill"><span class="dot"></span>{html.escape(item)}</div>'
+        for item in items
+    )
+    return f'<div class="status-strip">{pills}</div>'
 
 
 def _upload_intro_html(download_link_html: str) -> str:
@@ -853,6 +988,16 @@ def _render_classify_tab(service: PredictionService, project_root: Path) -> None
             unsafe_allow_html=True,
         )
 
+    st.markdown(
+        _status_strip_html(
+            "Model-ready inference flow",
+            "Balanced two-class classifier",
+            "Downloadable blind-test pack",
+            "Research-focused explanation layer",
+        ),
+        unsafe_allow_html=True,
+    )
+
     left_col, right_col = st.columns(2, gap="large")
     uploader_key = f"streamlit_uploader_{st.session_state.streamlit_upload_nonce}"
 
@@ -900,8 +1045,16 @@ def _render_classify_tab(service: PredictionService, project_root: Path) -> None
         with visual_right:
             st.markdown(_visual_label_html("Model attention heatmap"), unsafe_allow_html=True)
             st.image(state["attention_heatmap_image"], use_container_width=True)
-        st.markdown(_visual_label_html("Inference metadata"), unsafe_allow_html=True)
-        st.json(state["metadata"], expanded=True)
+        metadata_json = html.escape(json.dumps(state["metadata"], indent=2))
+        st.markdown(
+            f"""
+            <div class="metadata-shell">
+                {_visual_label_html("Inference metadata")}
+                <pre>{metadata_json}</pre>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     st.markdown(
         """
@@ -920,16 +1073,11 @@ def _render_download_tab(project_root: Path) -> None:
     bundle_bytes = _get_demo_bundle_bytes(str(project_root))
     bundle_name = demo_bundle_filename()
     st.markdown(
-        """
-        <div class="sample-copy">
-            <h2>Download Test Images</h2>
-            <p>
-                This tab lets users download the demo test-image bundle used for public app exploration.
-                The package is designed for quick testing, demos, and interface validation when real
-                endometrial scans are not immediately available.
-            </p>
-        </div>
-        """,
+        _section_intro_html(
+            "Demo Assets",
+            "Download test images",
+            "Download the curated blind-test image bundle when you want to explore the app without sourcing your own scan files.",
+        ),
         unsafe_allow_html=True,
     )
     st.markdown(
@@ -987,15 +1135,11 @@ def _render_download_tab(project_root: Path) -> None:
 
 def _render_feedback_tab(project_root: Path) -> None:
     st.markdown(
-        """
-        <div class="sample-copy">
-            <h2>Feedback</h2>
-            <p>
-                This page gives users a simple way to share impressions about the project, recommend improvements,
-                and tell us whether they would recommend the solution to others.
-            </p>
-        </div>
-        """,
+        _section_intro_html(
+            "Feedback Loop",
+            "Share your experience",
+            "Tell us what feels clear, what needs refinement, and which improvements would make the project more useful for research, demos, or collaboration.",
+        ),
         unsafe_allow_html=True,
     )
 
@@ -1104,15 +1248,11 @@ def _render_eda_tab(project_root: Path) -> None:
     split_chart_limit = gradio_ui._safe_chart_limit(split_distribution_frame, "count", minimum=10.0)
 
     st.markdown(
-        """
-        <div class="sample-copy">
-            <h2>EDA Lab</h2>
-            <p>
-                This section presents a compact research-facing view of the data curation workflow, split design,
-                optimization traces, and internal evaluation underpinning the deployed classifier.
-            </p>
-        </div>
-        """,
+        _section_intro_html(
+            "Evidence View",
+            "EDA Lab",
+            "Review the curation pipeline, partition strategy, optimization traces, and internal evaluation details behind the deployed classifier.",
+        ),
         unsafe_allow_html=True,
     )
     st.markdown(gradio_ui._eda_overview_html(training_summary), unsafe_allow_html=True)
@@ -1195,6 +1335,14 @@ def _render_eda_tab(project_root: Path) -> None:
 def _render_about_tab(project_root: Path) -> None:
     training_summary = gradio_ui._load_training_summary(project_root)
     assets_dir = project_root / "assets"
+    st.markdown(
+        _section_intro_html(
+            "Project Context",
+            "About the project",
+            "Understand the medical motivation, data curation approach, research framing, and the people behind the work.",
+        ),
+        unsafe_allow_html=True,
+    )
     st.markdown(gradio_ui._project_about_markdown(training_summary))
     st.markdown(gradio_ui.AUTHOR_MARKDOWN)
     columns = st.columns(len(gradio_ui.AUTHOR_PROFILES), gap="large")
@@ -1208,6 +1356,14 @@ def _render_about_tab(project_root: Path) -> None:
 
 
 def _render_future_tab() -> None:
+    st.markdown(
+        _section_intro_html(
+            "Roadmap",
+            "Future development",
+            "Explore the main enrichment tracks that could strengthen evaluation quality, usability, deployment robustness, and future research value.",
+        ),
+        unsafe_allow_html=True,
+    )
     st.markdown(gradio_ui._future_dev_markdown())
     left_col, right_col = st.columns([6, 4], gap="large")
     with left_col:
