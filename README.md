@@ -46,6 +46,16 @@ This repository contains the Streamlit deployment version of the project:
 
 It reproduces the current classifier experience in Streamlit while reusing the same model, author information, downloadable demo pack, EDA content, feedback logging, and research framing.
 
+## Streamlit Cloud deployment note
+
+If you deploy this repository on Streamlit Community Cloud:
+
+- choose **Python 3.12** in the app's advanced settings
+- set the main file to **`streamlit_app.py`**
+- if a previous deployment was created with the wrong Python version, delete it and redeploy because the Python version is chosen at creation time
+
+If Streamlit accidentally points at `app.py`, the repo now falls back to the Streamlit UI automatically, but `streamlit_app.py` remains the intended entrypoint.
+
 ## Overview
 
 This repository is a Streamlit-focused deployment scaffold for serving an endometrial image classifier with:
