@@ -14,6 +14,7 @@ from endometrial_app.streamlit_ui import (
     _hero_copy_html,
     _initial_inference_state,
     _probability_distribution_html,
+    _visual_placeholder_panel_html,
 )
 from endometrial_app.ui import _load_training_summary
 
@@ -56,6 +57,8 @@ def test_streamlit_initial_state_contains_placeholders() -> None:
     assert "Upload a scan to generate a prediction" in state["summary_html"]
     assert "Why the model predicted this" in state["explanation_html"]
     assert state["metadata"]["status"] == "Awaiting inference"
+    assert state["model_input_image"] is None
+    assert state["attention_heatmap_image"] is None
     assert state["probabilities"] == {}
 
 
@@ -68,3 +71,12 @@ def test_streamlit_hero_copy_matches_current_app_message() -> None:
     assert "TensorFlow inference pipeline" in hero_html
     assert "infected" in hero_html
     assert "uninfected" in hero_html
+
+
+def test_streamlit_visual_placeholders_include_requested_watermarks() -> None:
+    input_placeholder = _visual_placeholder_panel_html("Inference image")
+    heatmap_placeholder = _visual_placeholder_panel_html("Attention heatmap")
+
+    assert "Inference image" in input_placeholder
+    assert "Attention heatmap" in heatmap_placeholder
+    assert "visual-watermark" in input_placeholder

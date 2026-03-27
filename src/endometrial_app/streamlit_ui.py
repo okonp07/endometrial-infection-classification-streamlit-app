@@ -28,6 +28,7 @@ STREAMLIT_CSS = """
     --brand-ink: #12242d;
     --brand-slate: #4d6069;
     --brand-white: #ffffff;
+    --hero-panel-height: clamp(38rem, 43vw, 47rem);
 }
 
 .stApp {
@@ -104,8 +105,26 @@ p, li, label, span {
 }
 
 a {
+    display: inline-block;
     color: var(--brand-blue);
+    font-size: 1.03rem;
+    font-weight: 800;
+    padding: 0.08rem 0.34rem;
+    border-radius: 0.5rem;
     text-decoration-thickness: 2px;
+    text-underline-offset: 0.16rem;
+    transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+a:hover,
+a:focus,
+a:active {
+    color: var(--brand-white) !important;
+    background: linear-gradient(135deg, var(--brand-blue-deep), var(--brand-green));
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 20px rgba(18, 36, 45, 0.12);
+    outline: none;
+    text-decoration: none;
 }
 
 code {
@@ -175,7 +194,9 @@ code {
     border-radius: 28px;
     box-shadow: 0 20px 56px rgba(18, 36, 45, 0.08);
     padding: 1.55rem;
-    height: 100%;
+    height: var(--hero-panel-height);
+    display: flex;
+    flex-direction: column;
 }
 
 .hero-copy h1 {
@@ -250,7 +271,8 @@ code {
     border-radius: 28px;
     box-shadow: 0 20px 56px rgba(18, 36, 45, 0.08);
     padding: 0.95rem;
-    height: 100%;
+    height: var(--hero-panel-height);
+    display: flex;
 }
 
 .hero-banner-wrap img {
@@ -260,11 +282,13 @@ code {
     object-fit: cover;
     box-shadow: 0 16px 34px rgba(18, 36, 45, 0.16);
     display: block;
+    flex: 1 1 auto;
 }
 
 .hero-shell {
     margin-top: 0.15rem;
     margin-bottom: 1.35rem;
+    height: 100%;
 }
 
 .content-card-head h3,
@@ -300,6 +324,7 @@ code {
 
 .inline-download-link {
     color: var(--brand-blue);
+    font-size: 1.05rem;
     font-weight: 800;
     text-decoration: underline;
 }
@@ -457,6 +482,58 @@ code {
     font-size: 0.98rem;
 }
 
+.visual-shell {
+    position: relative;
+    min-height: 360px;
+    border-radius: 24px;
+    border: 1px solid rgba(9, 45, 70, 0.08);
+    background: linear-gradient(180deg, rgba(247, 250, 251, 0.98) 0%, rgba(237, 245, 243, 0.92) 100%);
+    overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+.visual-shell img {
+    width: 100%;
+    height: 100%;
+    min-height: 360px;
+    object-fit: contain;
+    display: block;
+    background: linear-gradient(180deg, rgba(247, 250, 251, 0.98) 0%, rgba(237, 245, 243, 0.92) 100%);
+}
+
+.visual-shell.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+        linear-gradient(180deg, rgba(247, 250, 251, 0.98) 0%, rgba(237, 245, 243, 0.92) 100%),
+        repeating-linear-gradient(
+            135deg,
+            rgba(14, 77, 115, 0.018),
+            rgba(14, 77, 115, 0.018) 16px,
+            rgba(23, 139, 118, 0.028) 16px,
+            rgba(23, 139, 118, 0.028) 32px
+        );
+}
+
+.visual-watermark {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(14, 77, 115, 0.12);
+    font-family: "Space Grotesk", "Manrope", sans-serif;
+    font-size: clamp(2rem, 4vw, 3.3rem);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transform: rotate(-26deg);
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+}
+
 .preview-shell {
     min-height: 360px;
     display: flex;
@@ -598,6 +675,10 @@ div.stDownloadButton > button:hover {
 }
 
 @media (max-width: 960px) {
+    :root {
+        --hero-panel-height: auto;
+    }
+
     .section-intro h2 {
         font-size: 1.6rem;
     }
@@ -630,6 +711,12 @@ div.stDownloadButton > button:hover {
 
     .preview-shell {
         min-height: 300px;
+    }
+
+    .hero-copy,
+    .hero-banner-wrap {
+        height: auto;
+        min-height: 31rem;
     }
 }
 
@@ -699,8 +786,8 @@ def _initial_inference_state() -> dict[str, Any]:
         "summary_html": gradio_ui._prediction_placeholder_html(),
         "probabilities": {},
         "explanation_html": gradio_ui._explanation_placeholder_html(),
-        "model_input_image": gradio_ui._visual_placeholder_image("model_input"),
-        "attention_heatmap_image": gradio_ui._visual_placeholder_image("attention_heatmap"),
+        "model_input_image": None,
+        "attention_heatmap_image": None,
         "metadata": gradio_ui._metadata_placeholder(),
     }
 
@@ -863,6 +950,22 @@ def _preview_placeholder_html() -> str:
     """
 
 
+def _visual_placeholder_panel_html(watermark: str) -> str:
+    return f"""
+    <div class="visual-shell placeholder" aria-label="{html.escape(watermark)} placeholder">
+        <div class="visual-watermark">{html.escape(watermark)}</div>
+    </div>
+    """
+
+
+def _visual_image_panel_html(image: Image.Image, alt: str) -> str:
+    return f"""
+    <div class="visual-shell">
+        <img src="{_data_uri_from_image(image)}" alt="{html.escape(alt)}" />
+    </div>
+    """
+
+
 def _visual_label_html(label: str) -> str:
     return f'<div class="visual-label">{html.escape(label)}</div>'
 
@@ -903,9 +1006,8 @@ def _classify_current_image(service: PredictionService) -> None:
         "summary_html": gradio_ui._prediction_card_html(result),
         "probabilities": result["probabilities"],
         "explanation_html": gradio_ui._explanation_card_html(result, explanation, service.settings.image_size),
-        "model_input_image": explanation.get("model_input_image") or gradio_ui._visual_placeholder_image("model_input"),
-        "attention_heatmap_image": explanation.get("attention_heatmap_image")
-        or gradio_ui._visual_placeholder_image("attention_heatmap"),
+        "model_input_image": explanation.get("model_input_image"),
+        "attention_heatmap_image": explanation.get("attention_heatmap_image"),
         "metadata": _build_probability_metadata(result, explanation, service),
     }
 
@@ -976,7 +1078,7 @@ def _render_classify_tab(service: PredictionService, project_root: Path) -> None
     training_summary = gradio_ui._load_training_summary(project_root)
     banner_path = project_root / "assets" / "banner" / "endometrium_banner.png"
 
-    hero_left, hero_right = st.columns([6, 5], gap="large")
+    hero_left, hero_right = st.columns(2, gap="large")
     with hero_left:
         st.markdown(
             f'<div class="hero-shell">{_hero_copy_html(training_summary)}</div>',
@@ -1041,10 +1143,22 @@ def _render_classify_tab(service: PredictionService, project_root: Path) -> None
         visual_left, visual_right = st.columns(2, gap="large")
         with visual_left:
             st.markdown(_visual_label_html("Model input used for inference"), unsafe_allow_html=True)
-            st.image(state["model_input_image"], use_container_width=True)
+            if state["model_input_image"] is None:
+                st.markdown(_visual_placeholder_panel_html("Inference image"), unsafe_allow_html=True)
+            else:
+                st.markdown(
+                    _visual_image_panel_html(state["model_input_image"], "Model input used for inference"),
+                    unsafe_allow_html=True,
+                )
         with visual_right:
             st.markdown(_visual_label_html("Model attention heatmap"), unsafe_allow_html=True)
-            st.image(state["attention_heatmap_image"], use_container_width=True)
+            if state["attention_heatmap_image"] is None:
+                st.markdown(_visual_placeholder_panel_html("Attention heatmap"), unsafe_allow_html=True)
+            else:
+                st.markdown(
+                    _visual_image_panel_html(state["attention_heatmap_image"], "Model attention heatmap"),
+                    unsafe_allow_html=True,
+                )
         metadata_json = html.escape(json.dumps(state["metadata"], indent=2))
         st.markdown(
             f"""
@@ -1260,11 +1374,11 @@ def _render_eda_tab(project_root: Path) -> None:
     top_left, top_right = st.columns(2, gap="large")
     with top_left:
         with st.container(border=True):
-            st.markdown(gradio_ui._class_distribution_markdown(training_summary))
+            st.markdown(gradio_ui._class_distribution_markdown(training_summary), unsafe_allow_html=True)
             _altair_bar_chart(class_distribution_frame, "class:N", "count:Q", "class:N", class_chart_limit)
     with top_right:
         with st.container(border=True):
-            st.markdown(gradio_ui._split_strategy_markdown(training_summary))
+            st.markdown(gradio_ui._split_strategy_markdown(training_summary), unsafe_allow_html=True)
             _altair_bar_chart(
                 split_distribution_frame,
                 "split_class:N",
@@ -1285,7 +1399,7 @@ def _render_eda_tab(project_root: Path) -> None:
     mid_left, mid_right = st.columns(2, gap="large")
     with mid_left:
         with st.container(border=True):
-            st.markdown(gradio_ui._accuracy_curves_markdown(training_history))
+            st.markdown(gradio_ui._accuracy_curves_markdown(training_history), unsafe_allow_html=True)
             _altair_line_chart(
                 accuracy_curve_frame,
                 ["Training Accuracy", "Validation Accuracy"],
@@ -1296,7 +1410,7 @@ def _render_eda_tab(project_root: Path) -> None:
             )
     with mid_right:
         with st.container(border=True):
-            st.markdown(gradio_ui._loss_curves_markdown(training_history))
+            st.markdown(gradio_ui._loss_curves_markdown(training_history), unsafe_allow_html=True)
             _altair_line_chart(
                 loss_curve_frame,
                 ["Training Loss", "Validation Loss"],
@@ -1309,20 +1423,20 @@ def _render_eda_tab(project_root: Path) -> None:
     lower_left, lower_right = st.columns([4, 6], gap="large")
     with lower_left:
         with st.container(border=True):
-            st.markdown(gradio_ui._research_safeguards_markdown(training_summary))
+            st.markdown(gradio_ui._research_safeguards_markdown(training_summary), unsafe_allow_html=True)
     with lower_right:
         with st.container(border=True):
-            st.markdown(gradio_ui._held_out_evaluation_markdown(training_summary))
+            st.markdown(gradio_ui._held_out_evaluation_markdown(training_summary), unsafe_allow_html=True)
             _test_metrics_chart(test_metrics_frame)
 
     bottom_left, bottom_right = st.columns([4, 6], gap="large")
     with bottom_left:
         with st.container(border=True):
-            st.markdown(gradio_ui._demo_profile_markdown())
+            st.markdown(gradio_ui._demo_profile_markdown(), unsafe_allow_html=True)
             st.dataframe(demo_profile_frame, use_container_width=True, hide_index=True)
     with bottom_right:
         with st.container(border=True):
-            st.markdown(gradio_ui._interpretation_note_markdown(training_summary))
+            st.markdown(gradio_ui._interpretation_note_markdown(training_summary), unsafe_allow_html=True)
             st.markdown(
                 """
                 - These performance estimates are internal to the current curated archive and should not be interpreted as population-level performance.
@@ -1343,8 +1457,8 @@ def _render_about_tab(project_root: Path) -> None:
         ),
         unsafe_allow_html=True,
     )
-    st.markdown(gradio_ui._project_about_markdown(training_summary))
-    st.markdown(gradio_ui.AUTHOR_MARKDOWN)
+    st.markdown(gradio_ui._project_about_markdown(training_summary), unsafe_allow_html=True)
+    st.markdown(gradio_ui.AUTHOR_MARKDOWN, unsafe_allow_html=True)
     columns = st.columns(len(gradio_ui.AUTHOR_PROFILES), gap="large")
     for column, profile in zip(columns, gradio_ui.AUTHOR_PROFILES):
         with column:
@@ -1364,7 +1478,7 @@ def _render_future_tab() -> None:
         ),
         unsafe_allow_html=True,
     )
-    st.markdown(gradio_ui._future_dev_markdown())
+    st.markdown(gradio_ui._future_dev_markdown(), unsafe_allow_html=True)
     left_col, right_col = st.columns([6, 4], gap="large")
     with left_col:
         with st.container(border=True):
