@@ -47,9 +47,9 @@ footer {
 }
 
 .block-container {
-    padding-top: 1.5rem;
+    padding-top: 1rem;
     padding-bottom: 2rem;
-    max-width: 1320px;
+    max-width: 1440px;
 }
 
 [data-testid="stVerticalBlockBorderWrapper"] {
@@ -67,6 +67,7 @@ footer {
     border-radius: 22px;
     padding: 0.4rem;
     box-shadow: 0 12px 32px rgba(18, 36, 45, 0.08);
+    width: 100%;
 }
 
 [data-testid="stTabs"] [data-baseweb="tab"] {
@@ -80,6 +81,10 @@ footer {
 [data-testid="stTabs"] [aria-selected="true"] {
     background: linear-gradient(135deg, var(--brand-blue-deep), var(--brand-green)) !important;
     color: var(--brand-white) !important;
+}
+
+[data-testid="stTabs"] [data-baseweb="tab-panel"] {
+    padding-top: 1.2rem;
 }
 
 h1, h2, h3 {
@@ -109,7 +114,7 @@ code {
     border: 1px solid rgba(9, 45, 70, 0.08);
     border-radius: 28px;
     box-shadow: 0 20px 56px rgba(18, 36, 45, 0.08);
-    padding: 1.4rem;
+    padding: 1.55rem;
     height: 100%;
 }
 
@@ -190,11 +195,16 @@ code {
 
 .hero-banner-wrap img {
     width: 100%;
-    min-height: 100%;
+    height: 100%;
     border-radius: 22px;
     object-fit: cover;
     box-shadow: 0 16px 34px rgba(18, 36, 45, 0.16);
     display: block;
+}
+
+.hero-shell {
+    margin-top: 0.15rem;
+    margin-bottom: 1.35rem;
 }
 
 .section-kicker,
@@ -828,6 +838,20 @@ def _render_classify_tab(service: PredictionService, project_root: Path) -> None
     bundle_name = demo_bundle_filename()
     download_link = _download_link_html(bundle_bytes, bundle_name)
     state = st.session_state.streamlit_inference_state
+    training_summary = gradio_ui._load_training_summary(project_root)
+    banner_path = project_root / "assets" / "banner" / "endometrium_banner.png"
+
+    hero_left, hero_right = st.columns([6, 5], gap="large")
+    with hero_left:
+        st.markdown(
+            f'<div class="hero-shell">{_hero_copy_html(training_summary)}</div>',
+            unsafe_allow_html=True,
+        )
+    with hero_right:
+        st.markdown(
+            f'<div class="hero-shell">{_hero_banner_html(banner_path)}</div>',
+            unsafe_allow_html=True,
+        )
 
     left_col, right_col = st.columns(2, gap="large")
     uploader_key = f"streamlit_uploader_{st.session_state.streamlit_upload_nonce}"
@@ -1239,17 +1263,8 @@ def main() -> None:
 
     service = _get_service()
     project_root = service.settings.project_root
-    banner_path = project_root / "assets" / "banner" / "endometrium_banner.png"
-    training_summary = gradio_ui._load_training_summary(project_root)
-
-    hero_left, hero_right = st.columns([6, 5], gap="large")
-    with hero_left:
-        st.markdown(_hero_copy_html(training_summary), unsafe_allow_html=True)
-    with hero_right:
-        st.markdown(_hero_banner_html(banner_path), unsafe_allow_html=True)
-
-    classify_tab, download_tab, feedback_tab, eda_tab, about_tab, future_tab = st.tabs(
-        ["Classify", "Download", "Feedback", "EDA Lab", "About", "Future Dev"]
+    classify_tab, download_tab, eda_tab, about_tab, future_tab, feedback_tab = st.tabs(
+        ["Classify", "Download", "EDA Lab", "About", "Future Dev", "Feedback"]
     )
 
     with classify_tab:
@@ -1257,9 +1272,6 @@ def main() -> None:
 
     with download_tab:
         _render_download_tab(project_root)
-
-    with feedback_tab:
-        _render_feedback_tab(project_root)
 
     with eda_tab:
         _render_eda_tab(project_root)
@@ -1269,5 +1281,8 @@ def main() -> None:
 
     with future_tab:
         _render_future_tab()
+
+    with feedback_tab:
+        _render_feedback_tab(project_root)
 
     st.markdown(gradio_ui.FOOTER_HTML, unsafe_allow_html=True)
