@@ -604,22 +604,71 @@ div[data-testid="stImage"] img {
 div.stButton > button,
 div.stDownloadButton > button {
     border-radius: 16px;
-    font-weight: 700;
+    color: var(--brand-blue-deep);
+    font-weight: 800 !important;
     min-height: 3rem;
     border: 1px solid rgba(9, 45, 70, 0.08);
     box-shadow: 0 12px 26px rgba(18, 36, 45, 0.08);
+    transition: transform 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+div.stButton > button *,
+div.stButton > button span,
+div.stButton > button p,
+div.stDownloadButton > button *,
+div.stDownloadButton > button span,
+div.stDownloadButton > button p {
+    color: inherit !important;
+    -webkit-text-fill-color: currentColor !important;
+    font-weight: 800 !important;
 }
 
 div.stButton > button[kind="primary"],
 div.stDownloadButton > button[kind="primary"] {
     background: linear-gradient(135deg, var(--brand-blue-deep), var(--brand-green));
-    color: var(--brand-white);
+    color: var(--brand-white) !important;
     border: none;
 }
 
+div.stButton > button[kind="primary"] *,
+div.stButton > button[kind="primary"] span,
+div.stButton > button[kind="primary"] p,
+div.stDownloadButton > button[kind="primary"] *,
+div.stDownloadButton > button[kind="primary"] span,
+div.stDownloadButton > button[kind="primary"] p {
+    color: var(--brand-white) !important;
+    -webkit-text-fill-color: var(--brand-white) !important;
+}
+
 div.stButton > button:hover,
-div.stDownloadButton > button:hover {
+div.stButton > button:focus-visible,
+div.stButton > button:active,
+div.stDownloadButton > button:hover,
+div.stDownloadButton > button:focus-visible,
+div.stDownloadButton > button:active {
     transform: translateY(-1px);
+    box-shadow: 0 14px 30px rgba(18, 36, 45, 0.12);
+}
+
+div.stButton > button:not([kind="primary"]):hover,
+div.stButton > button:not([kind="primary"]):focus-visible,
+div.stButton > button:not([kind="primary"]):active,
+div.stDownloadButton > button:not([kind="primary"]):hover,
+div.stDownloadButton > button:not([kind="primary"]):focus-visible,
+div.stDownloadButton > button:not([kind="primary"]):active {
+    background: linear-gradient(135deg, var(--brand-blue-deep), var(--brand-green));
+    color: var(--brand-white) !important;
+    border-color: transparent;
+}
+
+div.stButton > button:not([kind="primary"]):hover *,
+div.stButton > button:not([kind="primary"]):focus-visible *,
+div.stButton > button:not([kind="primary"]):active *,
+div.stDownloadButton > button:not([kind="primary"]):hover *,
+div.stDownloadButton > button:not([kind="primary"]):focus-visible *,
+div.stDownloadButton > button:not([kind="primary"]):active * {
+    color: var(--brand-white) !important;
+    -webkit-text-fill-color: var(--brand-white) !important;
 }
 
 .download-highlight,
