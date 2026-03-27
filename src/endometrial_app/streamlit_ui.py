@@ -688,6 +688,10 @@ div.stDownloadButton > button:not([kind="primary"]):active * {
     line-height: 1.7;
 }
 
+.accuracy-note {
+    margin-top: 0.9rem;
+}
+
 .feedback-status {
     padding: 1.1rem 1.15rem;
     border-radius: 22px;
@@ -1259,6 +1263,38 @@ def _test_metrics_chart(frame) -> None:
     st.altair_chart(chart, use_container_width=True)
 
 
+def _accuracy_interpretation_html(history) -> str:
+    if history.empty or "accuracy" not in history or "val_accuracy" not in history:
+        return """
+        <div class="eda-note accuracy-note">
+            <p>
+                This chart should be read as an internal optimization view. Even when training and validation accuracy appear closely aligned, stronger evidence of generalization still comes from grouped resampling, study-level splitting, and external validation on independent data.
+            </p>
+        </div>
+        """
+
+    final_train = float(history["accuracy"].iloc[-1])
+    final_val = float(history["val_accuracy"].iloc[-1])
+    gap = abs(final_train - final_val)
+
+    if gap <= 0.02:
+        pattern_copy = (
+            "The training and validation curves remain closely aligned here, so this plot does not show the classic divergence pattern that usually signals obvious overfitting."
+        )
+    else:
+        pattern_copy = (
+            "There is some visible separation between the training and validation curves here, so this panel should be reviewed carefully for possible overfitting dynamics."
+        )
+
+    return f"""
+    <div class="eda-note accuracy-note">
+        <p>
+            {pattern_copy} Even so, the near-perfect validation trajectory should still be treated as an <strong>internal result</strong>, not proof of broad external generalization. The final recorded values are <strong>{final_train:.2%}</strong> training accuracy and <strong>{final_val:.2%}</strong> validation accuracy, with a final gap of <strong>{gap:.2%}</strong>.
+        </p>
+    </div>
+    """
+
+
 def _render_classify_tab(service: PredictionService, project_root: Path) -> None:
     bundle_bytes = _get_demo_bundle_bytes(str(project_root))
     bundle_name = demo_bundle_filename()
@@ -1588,6 +1624,7 @@ def _render_eda_tab(project_root: Path) -> None:
                 "value:Q",
                 "series:N",
             )
+            st.markdown(_accuracy_interpretation_html(training_history), unsafe_allow_html=True)
     with mid_right:
         with st.container(border=True):
             st.markdown(gradio_ui._loss_curves_markdown(training_history), unsafe_allow_html=True)

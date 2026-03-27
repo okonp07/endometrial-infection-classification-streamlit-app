@@ -4,12 +4,14 @@ import zipfile
 from io import BytesIO
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 pytest.importorskip("streamlit")
 
 from endometrial_app.demo_bundle import build_demo_bundle_bytes, demo_bundle_filename
 from endometrial_app.streamlit_ui import (
+    _accuracy_interpretation_html,
     _download_link_html,
     _explanation_card_markdown,
     _hero_copy_html,
@@ -110,3 +112,18 @@ def test_streamlit_explanation_card_uses_markdown_not_html_paragraph_tags() -> N
     assert "Why the model predicted this" in explanation_markdown
     assert "<p>" not in explanation_markdown
     assert "**224 x 224**" in explanation_markdown
+
+
+def test_streamlit_accuracy_interpretation_adds_internal_evaluation_caution() -> None:
+    history = pd.DataFrame(
+        {
+            "accuracy": [0.87, 0.99, 1.0],
+            "val_accuracy": [1.0, 1.0, 1.0],
+        }
+    )
+
+    note_html = _accuracy_interpretation_html(history)
+
+    assert "does not show the classic divergence pattern" in note_html
+    assert "internal result" in note_html
+    assert "1.00%" not in note_html
