@@ -1,0 +1,57 @@
+name: Sync Hugging Face Space
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_SPACE_REPO: ${{ secrets.HF_SPACE_REPO }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate required secrets
+        run: |
+          test -n "$HF_TOKEN" || (echo "HF_TOKEN secret is missing" && exit 1)
+          test -n "$HF_SPACE_REPO" || (echo "HF_SPACE_REPO secret is missing" && exit 1)
+
+      - name: Clone Hugging Face Space
+        run: |
+          git clone https://__token__:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE_REPO} hf-space
+
+      - name: Sync repository contents
+        run: |
+          rsync -av --delete \
+            --exclude ".git/" \
+            --exclude ".github/" \
+            --exclude ".venv/" \
+            --exclude "__pycache__/" \
+            --exclude "hf-space/" \
+            ./ hf-space/
+
+      - name: Commit and push
+        run: |
+          cd hf-space
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git lfs install
+          git lfs track "models/*.keras"
+          git lfs track "assets/*/*.png"
+          git lfs track "assets/*/*.jpg"
+          git lfs track "assets/*/*.jpeg"
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes to push."
+            exit 0
+          fi
+          git commit -m "Sync from GitHub ${GITHUB_SHA}"
+          git push origin main
