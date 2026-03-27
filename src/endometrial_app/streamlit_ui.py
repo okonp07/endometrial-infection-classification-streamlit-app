@@ -882,7 +882,7 @@ def _initial_inference_state() -> dict[str, Any]:
     return {
         "summary_html": gradio_ui._prediction_placeholder_html(),
         "probabilities": {},
-        "explanation_html": gradio_ui._explanation_placeholder_html(),
+        "explanation_html": _explanation_placeholder_markdown(),
         "model_input_image": None,
         "attention_heatmap_image": None,
         "metadata": gradio_ui._metadata_placeholder(),
@@ -1130,6 +1130,53 @@ def _metadata_panel_html(metadata: dict[str, Any]) -> str:
     """
 
 
+def _explanation_placeholder_markdown() -> str:
+    return """
+### Why the model predicted this
+
+After inference, this section will explain the processing steps used by the model, highlight the most influential image regions, and summarize the technical metadata behind the current run.
+
+1. **Preprocess**: The uploaded scan is resized and prepared for the TensorFlow classifier.
+2. **Inspect**: The model input preview and attention heatmap appear here once inference completes.
+3. **Summarize**: The metadata card captures the run details used to explain the prediction outcome.
+"""
+
+
+def _explanation_card_markdown(
+    result: dict[str, Any],
+    explanation: dict[str, Any],
+    image_size: tuple[int, int],
+) -> str:
+    predicted_label = str(result["predicted_label"]).replace("_", " ").title()
+    focus_region = str(explanation.get("focus_region", "unavailable")).title()
+    focus_coverage = float(explanation.get("focus_coverage", 0.0))
+    focus_pattern = str(explanation.get("focus_pattern", "unavailable")).replace("_", " ")
+    high_attention_threshold = float(explanation.get("high_attention_threshold", 0.0))
+    margin = float(explanation.get("margin", 0.0))
+    runner_up_label = str(explanation.get("runner_up_label", "unavailable")).replace("_", " ").title()
+    attention_layer = str(explanation.get("attention_layer", "unavailable"))
+    error_message = explanation.get("error")
+
+    if error_message:
+        return f"""
+### Why the model predicted this
+
+The prediction is available, but the attention view could not be generated for this run. The fallback model-input preview is still shown below.
+
+**Technical detail:** {str(error_message)}
+"""
+
+    return f"""
+### Why the model predicted this
+
+The model first resized the uploaded scan to **{image_size[0]} x {image_size[1]}** pixels, then passed it through the trained TensorFlow feature extractor. For this run, the dominant high-attention mass was centered in the **{focus_region}** region of the scan and the resulting saliency mask was **{focus_pattern}**, spanning about **{focus_coverage:.1%}** of the analyzed frame.
+
+The winning class, **{predicted_label}**, finished ahead of **{runner_up_label}** by a probability margin of **{margin:.2%}**. The attention heatmap below is an input-saliency view that highlights the areas that most influenced the network's decision, derived from `{attention_layer}`. The high-attention mask is computed with an adaptive threshold calibrated to the current saliency map rather than a fixed percentage of pixels.
+
+Brighter colored zones indicate stronger influence on the model output. For this image, the adaptive threshold was **{high_attention_threshold:.2f}**. This is an interpretability aid for the current inference run, not a clinical segmentation or a standalone diagnosis.
+"""
+
+
 def _classify_current_image(service: PredictionService) -> None:
     image = _uploaded_image()
     if image is None:
@@ -1147,7 +1194,7 @@ def _classify_current_image(service: PredictionService) -> None:
     st.session_state.streamlit_inference_state = {
         "summary_html": gradio_ui._prediction_card_html(result),
         "probabilities": result["probabilities"],
-        "explanation_html": gradio_ui._explanation_card_html(result, explanation, service.settings.image_size),
+        "explanation_html": _explanation_card_markdown(result, explanation, service.settings.image_size),
         "model_input_image": explanation.get("model_input_image"),
         "attention_heatmap_image": explanation.get("attention_heatmap_image"),
         "metadata": _build_probability_metadata(result, explanation, service),
@@ -1281,7 +1328,7 @@ def _render_classify_tab(service: PredictionService, project_root: Path) -> None
 
     state = st.session_state.streamlit_inference_state
     with st.container(border=True):
-        st.markdown(state["explanation_html"], unsafe_allow_html=True)
+        st.markdown(state["explanation_html"])
         visual_left, visual_right = st.columns(2, gap="large")
         with visual_left:
             st.markdown(_visual_label_html("Model input used for inference"), unsafe_allow_html=True)

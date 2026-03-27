@@ -11,6 +11,7 @@ pytest.importorskip("streamlit")
 from endometrial_app.demo_bundle import build_demo_bundle_bytes, demo_bundle_filename
 from endometrial_app.streamlit_ui import (
     _download_link_html,
+    _explanation_card_markdown,
     _hero_copy_html,
     _initial_inference_state,
     _metadata_panel_html,
@@ -89,3 +90,23 @@ def test_streamlit_metadata_placeholder_is_human_readable() -> None:
     assert "Inference metadata will appear here" in metadata_html
     assert "Upload a scan and run the classifier" in metadata_html
     assert '"status"' not in metadata_html
+
+
+def test_streamlit_explanation_card_uses_markdown_not_html_paragraph_tags() -> None:
+    explanation_markdown = _explanation_card_markdown(
+        {"predicted_label": "infected"},
+        {
+            "focus_region": "middle center",
+            "focus_coverage": 0.026,
+            "focus_pattern": "compact",
+            "high_attention_threshold": 0.71,
+            "margin": 0.9984,
+            "runner_up_label": "uninfected",
+            "attention_layer": "input-gradient saliency",
+        },
+        (224, 224),
+    )
+
+    assert "Why the model predicted this" in explanation_markdown
+    assert "<p>" not in explanation_markdown
+    assert "**224 x 224**" in explanation_markdown
