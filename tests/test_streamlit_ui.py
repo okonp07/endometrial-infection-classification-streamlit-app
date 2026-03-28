@@ -14,13 +14,14 @@ from endometrial_app.streamlit_ui import (
     _accuracy_interpretation_html,
     _download_link_html,
     _explanation_card_markdown,
+    _friendly_metadata_summary,
     _hero_copy_html,
     _initial_inference_state,
     _metadata_panel_html,
-    _probability_distribution_html,
+    _ordered_probability_rows,
     _visual_placeholder_panel_html,
 )
-from endometrial_app.ui import _load_training_summary
+from endometrial_app.ui import AUTHOR_PROFILES, _load_training_summary
 
 
 def test_streamlit_download_link_is_direct_download() -> None:
@@ -45,14 +46,13 @@ def test_streamlit_demo_bundle_bytes_are_valid_zip() -> None:
         assert all("infected_" not in name and "uninfected_" not in name for name in image_members)
 
 
-def test_streamlit_probability_html_contains_expected_labels() -> None:
-    html = _probability_distribution_html({"infected": 0.82, "uninfected": 0.18})
+def test_streamlit_probability_rows_are_ordered_and_labeled() -> None:
+    rows = _ordered_probability_rows({"infected": 0.82, "uninfected": 0.18})
 
-    assert "Class probabilities" in html
-    assert "infected" in html
-    assert "uninfected" in html
-    assert "82%" in html
-    assert "18%" in html
+    assert rows[0]["class_name"] == "infected"
+    assert rows[0]["percentage"] == 82
+    assert rows[1]["class_name"] == "uninfected"
+    assert rows[1]["percentage"] == 18
 
 
 def test_streamlit_initial_state_contains_placeholders() -> None:
@@ -94,6 +94,24 @@ def test_streamlit_metadata_placeholder_is_human_readable() -> None:
     assert '"status"' not in metadata_html
 
 
+def test_streamlit_metadata_summary_is_friendly_to_non_technical_users() -> None:
+    summary = _friendly_metadata_summary(
+        {
+            "class_order": ["infected", "uninfected"],
+            "input_size": [224, 224],
+            "attention_layer": "input-gradient saliency",
+            "focus_region": "middle left",
+            "focus_pattern": "compact",
+            "focus_coverage": 0.0138,
+            "high_attention_threshold": 0.6419,
+        }
+    )
+
+    assert summary["Prediction labels used"] == "Infected, Uninfected"
+    assert summary["Scan size analyzed"] == "224 x 224 pixels"
+    assert summary["Loaded model"] == "Current deployed production classifier"
+
+
 def test_streamlit_explanation_card_uses_markdown_not_html_paragraph_tags() -> None:
     explanation_markdown = _explanation_card_markdown(
         {"predicted_label": "infected"},
@@ -127,3 +145,9 @@ def test_streamlit_accuracy_interpretation_adds_internal_evaluation_caution() ->
     assert "does not show the classic divergence pattern" in note_html
     assert "internal result" in note_html
     assert "1.00%" not in note_html
+
+
+def test_streamlit_author_role_uses_requested_two_line_title() -> None:
+    prince = next(profile for profile in AUTHOR_PROFILES if profile["name"] == "Okon Prince")
+
+    assert prince["role"] == "AI Engineer & Data Scientist |<br>Senior Data Scientist at MIVA Open University"

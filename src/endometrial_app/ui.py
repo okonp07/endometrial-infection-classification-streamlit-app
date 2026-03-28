@@ -1330,7 +1330,7 @@ This project currently credits three authors. The cards below show the current a
 AUTHOR_PROFILES = [
     {
         "name": "Okon Prince",
-        "role": "Senior Data Scientist at MIVA Open University | AI Engineer & Data Scientist",
+        "role": "AI Engineer & Data Scientist |<br>Senior Data Scientist at MIVA Open University",
         "image_asset": "author/okon-prince.png",
         "bio": (
             "I design and deploy end-to-end data systems that turn raw data into production-ready intelligence.\n\n"

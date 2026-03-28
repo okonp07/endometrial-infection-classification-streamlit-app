@@ -17,6 +17,9 @@ from endometrial_app.feedback import save_feedback
 from endometrial_app.service import PredictionService
 from endometrial_app import ui as gradio_ui
 
+STREAMLIT_REPO_URL = "https://github.com/okonp07/endometrial-infection-classification-streamlit-app"
+PRODUCTION_REPO_URL = "https://github.com/okonp07/endometrial-infection-classification-app"
+
 
 STREAMLIT_CSS = """
 :root {
@@ -432,6 +435,42 @@ code {
     margin: 0;
 }
 
+.probability-native {
+    margin-top: 1rem;
+    padding: 1rem 1.05rem;
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(247, 250, 251, 0.98) 0%, rgba(237, 245, 243, 0.92) 100%);
+    border: 1px solid rgba(9, 45, 70, 0.08);
+}
+
+.probability-native h3 {
+    margin: 0 0 0.25rem;
+    color: var(--brand-blue-deep);
+    font-family: "Space Grotesk", "Manrope", sans-serif;
+    font-size: 1.02rem;
+    font-weight: 700;
+}
+
+.metadata-friendly {
+    margin-top: 0.45rem;
+    padding: 1rem 1.05rem;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(247, 250, 251, 0.98) 0%, rgba(237, 245, 243, 0.92) 100%);
+    border: 1px solid rgba(9, 45, 70, 0.08);
+}
+
+.metadata-friendly h3 {
+    margin: 0 0 0.6rem;
+    color: var(--brand-blue-deep);
+    font-family: "Space Grotesk", "Manrope", sans-serif;
+    font-size: 1.02rem;
+    font-weight: 700;
+}
+
+.metadata-friendly p {
+    margin: 0 0 0.5rem;
+}
+
 .prob-row {
     margin-bottom: 0.85rem;
 }
@@ -713,7 +752,8 @@ div.stDownloadButton > button:not([kind="primary"]):active * {
     border: 1px solid rgba(9, 45, 70, 0.08);
 }
 
-.metadata-shell pre {
+.metadata-shell pre,
+.metadata-friendly pre {
     margin: 0;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
@@ -721,6 +761,17 @@ div.stDownloadButton > button:not([kind="primary"]):active * {
     font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
     font-size: 0.88rem;
     line-height: 1.65;
+}
+
+.metadata-friendly details {
+    margin-top: 0.85rem;
+}
+
+.metadata-friendly summary {
+    cursor: pointer;
+    color: var(--brand-blue-deep);
+    font-weight: 700;
+    margin-bottom: 0.6rem;
 }
 
 .metadata-empty {
@@ -761,6 +812,7 @@ div.stDownloadButton > button:not([kind="primary"]):active * {
     color: var(--brand-green);
     font-weight: 700;
     margin-bottom: 0.7rem;
+    line-height: 1.55;
 }
 
 .footer-note {
@@ -1024,42 +1076,22 @@ def _result_intro_html() -> str:
     """
 
 
-def _probability_distribution_html(probabilities: dict[str, float]) -> str:
-    if not probabilities:
-        return """
-        <div class="probability-shell">
-            <div class="probability-title">Class probabilities</div>
-            <p class="probability-placeholder">
-                Probability bars will appear here after the model runs on an uploaded scan.
-            </p>
-        </div>
-        """
-
+def _ordered_probability_rows(probabilities: dict[str, float]) -> list[dict[str, Any]]:
     ordered = sorted(probabilities.items(), key=lambda item: item[1], reverse=True)
     color_map = {"infected": "#0e4d73", "uninfected": "#178b76"}
-    rows = []
+    rows: list[dict[str, Any]] = []
     for class_name, probability in ordered:
-        percentage = int(round(float(probability) * 100))
-        color = color_map.get(class_name, "#0e4d73")
+        value = float(probability)
         rows.append(
-            f"""
-            <div class="prob-row">
-                <div class="prob-row-head">
-                    <span>{html.escape(class_name)}</span>
-                    <span>{percentage}%</span>
-                </div>
-                <div class="prob-track">
-                    <div class="prob-fill" style="width:{max(percentage, 1)}%; background:{color};"></div>
-                </div>
-            </div>
-            """
+            {
+                "class_name": class_name,
+                "label": class_name.replace("_", " ").title(),
+                "probability": value,
+                "percentage": int(round(value * 100)),
+                "color": color_map.get(class_name, "#0e4d73"),
+            }
         )
-    return f"""
-    <div class="probability-shell">
-        <div class="probability-title">Class probabilities</div>
-        {''.join(rows)}
-    </div>
-    """
+    return rows
 
 
 def _preview_placeholder_html() -> str:
@@ -1111,10 +1143,27 @@ def _build_probability_metadata(
     }
 
 
+def _friendly_metadata_summary(metadata: dict[str, Any]) -> dict[str, str]:
+    class_order = metadata.get("class_order", [])
+    input_size = metadata.get("input_size", [])
+    focus_coverage = float(metadata.get("focus_coverage", 0.0)) * 100
+    threshold = float(metadata.get("high_attention_threshold", 0.0))
+    return {
+        "Prediction labels used": ", ".join(str(item).title() for item in class_order) or "Unavailable",
+        "Scan size analyzed": " x ".join(str(item) for item in input_size) + " pixels" if input_size else "Unavailable",
+        "Explanation method": str(metadata.get("attention_layer", "Unavailable")).replace("_", " "),
+        "Main focus region": str(metadata.get("focus_region", "Unavailable")).replace("_", " ").title(),
+        "Attention pattern": str(metadata.get("focus_pattern", "Unavailable")).replace("_", " ").title(),
+        "High-attention coverage": f"{focus_coverage:.2f}%",
+        "Adaptive threshold used": f"{threshold:.2f}",
+        "Loaded model": "Current deployed production classifier",
+    }
+
+
 def _metadata_panel_html(metadata: dict[str, Any]) -> str:
     if metadata.get("status") == "Awaiting inference":
         return f"""
-        <div class="metadata-shell">
+        <div class="metadata-friendly">
             {_visual_label_html("Inference metadata")}
             <div class="metadata-empty">
                 <div>
@@ -1125,13 +1174,38 @@ def _metadata_panel_html(metadata: dict[str, Any]) -> str:
         </div>
         """
 
+    summary_items = _friendly_metadata_summary(metadata)
+    summary_markup = "".join(
+        f"<p><strong>{html.escape(label)}:</strong> {html.escape(value)}</p>"
+        for label, value in summary_items.items()
+    )
     metadata_json = html.escape(json.dumps(metadata, indent=2))
     return f"""
-    <div class="metadata-shell">
+    <div class="metadata-friendly">
         {_visual_label_html("Inference metadata")}
-        <pre>{metadata_json}</pre>
+        <h3>Readable summary</h3>
+        {summary_markup}
+        <details>
+            <summary>Technical details</summary>
+            <pre>{metadata_json}</pre>
+        </details>
     </div>
     """
+
+
+def _render_probability_distribution(probabilities: dict[str, float]) -> None:
+    st.markdown("#### Class probabilities")
+    if not probabilities:
+        st.caption("Probability bars will appear here after the model runs on an uploaded scan.")
+        return
+
+    for row in _ordered_probability_rows(probabilities):
+        label_col, value_col = st.columns([5, 1], gap="small")
+        with label_col:
+            st.markdown(f"**{row['label']}**")
+        with value_col:
+            st.markdown(f"**{row['percentage']}%**")
+        st.progress(max(row["probability"], 0.01))
 
 
 def _explanation_placeholder_markdown() -> str:
@@ -1295,6 +1369,51 @@ def _accuracy_interpretation_html(history) -> str:
     """
 
 
+def _render_codebase_tab() -> None:
+    st.markdown(
+        _section_intro_html(
+            "Open Source",
+            "Codebase",
+            "Explore the repository behind this Streamlit experience, review the implementation details, and trace the project structure for further collaboration or extension.",
+        ),
+        unsafe_allow_html=True,
+    )
+
+    left_col, right_col = st.columns([6, 4], gap="large")
+    with left_col:
+        with st.container(border=True):
+            st.markdown(
+                f"""
+                <div class="helper-copy">
+                    <span class="section-kicker">Primary Repository</span>
+                    <h2>Streamlit codebase</h2>
+                    <p>
+                        This repository contains the current Streamlit implementation, including the interface layer,
+                        project assets, EDA presentation, feedback workflow, and deployment-oriented app structure.
+                    </p>
+                    <p><a href="{html.escape(STREAMLIT_REPO_URL)}">Open the Streamlit codebase on GitHub</a></p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+    with right_col:
+        with st.container(border=True):
+            st.markdown(
+                f"""
+                <div class="helper-copy">
+                    <span class="section-kicker">Related Build</span>
+                    <h2>Original production stack</h2>
+                    <p>
+                        The earlier production deployment built around FastAPI, Gradio, Docker, and Hugging Face
+                        remains available in its own repository for comparison and reference.
+                    </p>
+                    <p><a href="{html.escape(PRODUCTION_REPO_URL)}">View the original production repository</a></p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+
 def _render_classify_tab(service: PredictionService, project_root: Path) -> None:
     bundle_bytes = _get_demo_bundle_bytes(str(project_root))
     bundle_name = demo_bundle_filename()
@@ -1350,7 +1469,7 @@ def _render_classify_tab(service: PredictionService, project_root: Path) -> None
         with st.container(border=True):
             st.markdown(_result_intro_html(), unsafe_allow_html=True)
             st.markdown(state["summary_html"], unsafe_allow_html=True)
-            st.markdown(_probability_distribution_html(state["probabilities"]), unsafe_allow_html=True)
+            _render_probability_distribution(state["probabilities"])
 
     action_left, action_right = st.columns(2, gap="large")
     with action_left:
@@ -1750,8 +1869,8 @@ def main() -> None:
 
     service = _get_service()
     project_root = service.settings.project_root
-    classify_tab, download_tab, eda_tab, about_tab, future_tab, feedback_tab = st.tabs(
-        ["Classify", "Download", "EDA Lab", "About", "Future Dev", "Feedback"]
+    classify_tab, download_tab, eda_tab, about_tab, future_tab, codebase_tab, feedback_tab = st.tabs(
+        ["Classify", "Download", "EDA Lab", "About", "Future Dev", "Codebase", "Feedback"]
     )
 
     with classify_tab:
@@ -1768,6 +1887,9 @@ def main() -> None:
 
     with future_tab:
         _render_future_tab()
+
+    with codebase_tab:
+        _render_codebase_tab()
 
     with feedback_tab:
         _render_feedback_tab(project_root)
