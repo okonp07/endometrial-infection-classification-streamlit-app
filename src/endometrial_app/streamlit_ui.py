@@ -68,7 +68,7 @@ footer {
 
 [data-testid="stTabs"] [data-baseweb="tab-list"] {
     gap: 0.35rem;
-    background: rgba(255, 255, 255, 0.78);
+    background: linear-gradient(180deg, rgba(238, 243, 244, 0.94) 0%, rgba(229, 237, 239, 0.9) 100%);
     border: 1px solid rgba(9, 45, 70, 0.08);
     border-radius: 22px;
     padding: 0.4rem;
@@ -80,8 +80,10 @@ footer {
     height: 44px;
     padding: 0.7rem 1rem;
     border-radius: 16px;
+    background: rgba(255, 255, 255, 0.28);
     color: var(--brand-blue-deep);
     font-weight: 800 !important;
+    border: 1px solid rgba(9, 45, 70, 0.04);
     transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
 
@@ -98,6 +100,7 @@ footer {
 [data-testid="stTabs"] [data-baseweb="tab"]:hover,
 [data-testid="stTabs"] [data-baseweb="tab"]:focus-visible,
 [data-testid="stTabs"] [data-baseweb="tab"]:active {
+    background: rgba(255, 255, 255, 0.46);
     box-shadow: 0 10px 24px rgba(18, 36, 45, 0.1);
 }
 
